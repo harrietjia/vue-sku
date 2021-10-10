@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN" ng-strict-di>
+  <meta charset="utf-8" />
+  <meta name="renderer" content="webkit" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="X-Context-Path" content="" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  <head>
+    <title>
+      商品规格sku
+    </title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css" />
+  </head>
+  <body>
+    <style>
+      [v-cloak] {
+          display: none;
+      }
+      .attribute-item {
+        display: flex;
+        flex-direction: column;
+        padding: 0 0 18px 18px;
+        font-size: 14px;
+        color: #101010;
+        border-bottom: 1px solid #e8e8e8;
+      }
+      .attribute-title {
+        font-weight: bold;
+      }
+      .specItem-span {
+        display: inline-block;
+        color: #FFF;
+        background-color: #29BA9C;
+        padding: 4px 10px;
+        cursor: move;
+        margin: 10px 0 0 10px;
+      }
+      .option-box {
+        font-weight: bold;
+        margin: 20px 0 20px 28px;
+      }
+      .tips-box {
+        font-size: 12px;
+        color: #737373;
+        margin: 20px 0 25px 28px;
+      }
+      .goods-spec_info-forms {
+        padding:15px 10px;
+        border:1px solid #eee;
+        border-radius:2px;
+      }
+      .goods-spec_info-form {
+        position:relative;
+      }
+      .goods-spec_info-remove {
+        visibility:hidden;
+        position:absolute;
+        top:0;
+        right:0;
+        margin:3px;
+        padding:5px;
+        color:white;
+        border-radius:50%;
+        background:rgba(0,0,0,0.5);
+        cursor:pointer;
+      }
+      .goods-spec_info-form:hover .goods-spec_info-remove {
+        visibility:visible;
+      }
+      .goods-spec_info_form-item:first-child {
+        background-color:#fafafa;
+      }
+      .goods-spec_info_form-item {
+        display:flex;
+        column-gap:15px;
+        margin-bottom:15px;
+        padding:10px;
+      }
+      .goods-sped_info_form-name {
+        flex-shrink:0;
+      }
+      .goods-spec_info_form-content {
+        flex-shrink:0;
+        width:80%;
+      }
+      .goods-spec_info_form-content .upload-boxed {
+        margin:10px 0;
+        width:100%;
+        height:unset;
+        text-align:center;
+      }
+      .goods-spec_info_form-content .upload-boxed .el-icon-plus {
+        width:60px;
+        height:60px;
+        line-height:60px;
+        font-size:14px;
+        border-bottom:1px dashed #ccc;
+      }
+      .goods-spec_info_form-content .upload-boxed img {
+        width:60px;
+        height:60px;
+      }
+      .goods-spec_info_value-item {
+        display:inline-block;
+        position:relative;
+        vertical-align:top;
+        margin:0 10px 10px 0;
+        width:150px;
+      }
+      .goods-spec_info_value-remove {
+        position:absolute;
+        right:-5px;
+        top:-5px;
+        font-size:16px;
+        background-color:white;
+        border-radius:50%;
+        cursor:pointer;
+        visibility: hidden;
+      }
+      .goods-spec_info_value-item:hover .goods-spec_info_value-remove {
+        visibility:visible;
+      }
+
+      .spec-image.upload-boxed {
+        width:60px;
+        height:62px;
+      }
+      .spec-image.upload-boxed .el-icon-plus {
+        width:60px;
+        line-height:60px;
+        border-bottom:1px dashed #ccc;
+        box-sizing:border-box;
+        background-color:white;
+      } 
+    </style>
+
+    <div id="app" v-cloak>
+      <div style="padding:60px;">
+
+        <el-form label-width="100px">
+          <el-form-item label="商品规格">
+            <div class="goods-spec_info-forms">
+              <div class="goods-spec_info-form" v-for="(specItem,specItemIndex) in tableColumnList.goodsSpecs" :key="specItemIndex">
+                <div class="goods-spec_info_form-item">
+                  <div class="goods-sped_info_form-name">
+                    规格名：
+                  </div>
+                  <div class="goods-spec_info_form-content">
+                    <el-input v-model.trim="specItem.attr" ref="specValueInput" placeholder="（比如颜色）" @focus="attrFocus(specItem.attr)" @blur="attrBlur(specItem.attr)"></el-input>
+                  </div>
+                </div>
+                <div class="goods-spec_info_form-item">
+                  <div class="goods-sped_info_form-name">
+                    规格值：
+                  </div>
+                  <div class="goods-spec_info_form-content">
+                    <div class="goods-spec_info-values">
+                      <div class="goods-spec_info_value-item" v-for="(valueItem,valueItemIndex) in specItem.valueList" :key="valueItemIndex">
+                        <el-input v-model.trim="specItem.valueList[valueItemIndex].title" ref="attrValueInput" @focus="attrValueFocus(specItem.valueList[valueItemIndex].title)" @blur="newAttrValueBlur(specItem.attr, specItem.valueList[valueItemIndex].title,specItemIndex,valueItemIndex)"></el-input>
+                        <div class="el-icon-close goods-spec_info_value-remove" v-if="specItem.valueList.length > 1" @click="removeSpecValue(specItemIndex,valueItemIndex, specItem.attr, specItem.valueList[valueItemIndex].title)"></div>
+                      </div>
+                      <div class="goods-spec_info_value-item">
+                        <el-button @click="addSpecValue(specItemIndex)" :disabled="specItem.valueList.filter(value => value.title === '').length > 0">添加规格值</el-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="el-icon-close goods-spec_info-remove" @click="removeSpec(specItemIndex)"></div>
+              </div>
+              <div class="goods-spec_info-form" style="margin-bottom: 0;">
+                <div class="goods-spec_info_form-item">
+
+                  <el-popover placement="top" width="240" v-model="add_popover_bool" @after-enter="$refs.addValueInput.focus()">
+                    <div style="display: flex; grid-gap: 10px;">
+                      <el-input ref="addValueInput" v-model.trim="add_value" @keyup.enter.native="addSpec()" />
+                      <el-button type="primary" @click="addSpec()">确定</el-button>
+                    </div>
+                    <el-button slot="reference" type="text" style="margin-right: 75px;">添加规格项</el-button>
+                  </el-popover>
+
+                  <el-button type="text" @click="clearALL">清空全部规格项</el-button>
+                </div>
+              </div>
+            </div>
+          </el-form-item>
+          <el-form-item label="批量设置">
+            <div class="goods-spec_info-forms">
+              <el-popover placement="top" width="240" trigger="click">
+                <div style="display: flex; grid-gap: 10px;">
+                  <el-input placeholder="请输入库存" v-model.trim="batch_input" @keyup.enter.native="batchSet('stock')" />
+                  <el-button type="primary" @click="batchSet('stock')">确定</el-button>
+                </div>
+                <el-button slot="reference" type="text" style="margin-right: 25px;">设置库存</el-button>
+              </el-popover>
+              <el-popover placement="top" width="240" trigger="click">
+                <div style="display: flex; grid-gap: 10px;">
+                  <el-input placeholder="请输入市场价格" v-model.trim="batch_input" @keyup.enter.native="batchSet('market_price')" />
+                  <el-button type="primary" @click="batchSet('market_price')">确定</el-button>
+                </div>
+                <el-button slot="reference" type="text" style="margin-right: 25px;">设置市场价格</el-button>
+              </el-popover>
+              <el-popover placement="top" width="240" trigger="click">
+                <div style="display: flex; grid-gap: 10px;">
+                  <el-input placeholder="请输入现价" v-model.trim="batch_input" @keyup.enter.native="batchSet('product_price')" />
+                  <el-button type="primary" @click="batchSet('product_price')">确定</el-button>
+                </div>
+                <el-button slot="reference" type="text" style="margin-right: 25px;">设置现价</el-button>
+              </el-popover>
+              <el-popover placement="top" width="240" trigger="click">
+                <div style="display: flex; grid-gap: 10px;">
+                  <el-input placeholder="请输入成本价格" v-model.trim="batch_input" @keyup.enter.native="batchSet('cost_price')" />
+                  <el-button type="primary" @click="batchSet('cost_price')">确定</el-button>
+                </div>
+                <el-button slot="reference" type="text" style="margin-right: 25px;">设置成本价格</el-button>
+              </el-popover>
+              <el-popover placement="top" width="240" trigger="click">
+                <div style="display: flex; grid-gap: 10px;">
+                  <el-input placeholder="请输入商品编码" v-model.trim="batch_input" @keyup.enter.native="batchSet('goods_sn')" />
+                  <el-button type="primary" @click="batchSet('goods_sn')">确定</el-button>
+                </div>
+                <el-button slot="reference" type="text" style="margin-right: 25px;">设置商品编码</el-button>
+              </el-popover>
+              <el-popover placement="top" width="240" trigger="click">
+                <div style="display: flex; grid-gap: 10px;">
+                  <el-input placeholder="请输入商品条码" v-model.trim="batch_input" @keyup.enter.native="batchSet('product_sn')" />
+                  <el-button type="primary" @click="batchSet('product_sn')">确定</el-button>
+                </div>
+                <el-button slot="reference" type="text" style="margin-right: 25px;">设置商品条码</el-button>
+              </el-popover>
+              <el-popover placement="top" width="240" trigger="click">
+                <div style="display: flex; grid-gap: 10px;">
+                  <el-input placeholder="请输入重量" v-model.trim="batch_input" @keyup.enter.native="batchSet('weight')" />
+                  <el-button type="primary" @click="batchSet('weight')">确定</el-button>
+                </div>
+                <el-button slot="reference" type="text" style="margin-right: 25px;">设置重量</el-button>
+              </el-popover>
+              <el-popover placement="top" width="240" trigger="click">
+                <div style="display: flex; grid-gap: 10px;">
+                  <el-input placeholder="请输入体积" v-model.trim="batch_input" @keyup.enter.native="batchSet('volume')" />
+                  <el-button type="primary" @click="batchSet('volume')">确定</el-button>
+                </div>
+                <el-button slot="reference" type="text" style="margin-right: 25px;">设置体积</el-button>
+              </el-popover>
+            </div>
+          </el-form-item>
+          <el-form-item label="规格明细">
+            <el-table :data="tableColumnList.table_data" border :span-method="mergeRowComputed">
+              <el-table-column :label="specItem.attr" v-for="(specItem,itemIndex) in tableColumnList.goodsSpecs" :key="itemIndex" :prop="specItem.attr">
+              </el-table-column>
+              <el-table-column label="库存" prop="stock">
+                <template slot-scope="scope">
+                  <el-input v-model="scope.row.stock" :ref="'stockValueInput' + [[scope.$index]]" placeholder="0"></el-input>
+                </template>
+              </el-table-column>
+              <el-table-column label="预扣库存" prop="withhold_stock">
+                <template slot-scope="scope">
+                  <el-input v-model="scope.row.withhold_stock" disabled placeholder="0"></el-input>
+                </template>
+              </el-table-column>
+              <el-table-column label="市场价格" prop="market_price">
+                <template slot-scope="scope">
+                  <el-input v-model="scope.row.market_price" ></el-input>
+                </template>
+              </el-table-column>
+              <el-table-column label="现价" prop="product_price">
+                <template slot-scope="scope">
+                  <el-input v-model="scope.row.product_price" :ref="'priceValueInput' + [[scope.$index]]" placeholder="0.00"></el-input>
+                </template>
+              </el-table-column>
+              <el-table-column label="成本价" prop="cost_price">
+                <template slot-scope="scope">
+                  <el-input v-model="scope.row.cost_price" ></el-input>
+                </template>
+              </el-table-column>
+              <el-table-column label="商品编码" prop="goods_sn">
+                <template slot-scope="scope">
+                  <el-input v-model="scope.row.goods_sn" ></el-input>
+                </template>
+              </el-table-column>
+              <el-table-column label="商品条码" prop="product_sn">
+                <template slot-scope="scope">
+                  <el-input v-model="scope.row.product_sn" ></el-input>
+                </template>
+              </el-table-column>
+              <el-table-column label="重量（克）" prop="weight">
+                <template slot-scope="scope">
+                  <el-input v-model="scope.row.weight" ></el-input>
+                </template>
+              </el-table-column>
+              <el-table-column label="体积（m³）" prop="volume">
+                <template slot-scope="scope">
+                  <el-input v-model="scope.row.volume"  ></el-input>
+                </template>
+              </el-table-column>
+              <!-- <el-table-column label="图片（300*300）" prop="thumb">
+                暂未实现
+                <template slot-scope="scope">
+                  <div class="upload-boxed spec-image" @click="selectedingImageSpecIndex=scope.$index;showSelectSpecImageDialog=!showSelectSpecImageDialog">
+                    <img
+                      :src="scope.row.thumb"
+                      style="width: 60px; height: 60px; border-radius: 5px; cursor: pointer;object-fit:cover;"
+                      v-show="scope.row.thumb"
+                    />
+                    <div class="el-icon-plus" v-show="!scope.row.thumb"></div>
+                  </div>
+                </template>
+              </el-table-column> -->
+            </el-table>
+            <p>数量：{{ specCounts }}条</p>
+          </el-form-item>
+        </el-form>
+
+      </div>
+    </div>
+
+    <!-- 先引入 Vue -->
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
+
+    <script>
+      var app = new Vue({
+        el: '#app',
+        data: {
+          // 表单
+          tableHeaderList: ['stock', 'withhold_stock', 'market_price', 'product_price', 'cost_price', 'goods_sn', 'product_sn', 'weight', 'volume', 'thumb', ], // 表格列
+          tableColumnList: {
+            goodsSpecs: [],
+            table_data: [], // 表格中的数据
+          },
+          add_value: "", // 添加属性的input
+          add_popover_bool: false, // 添加属性的小弹窗
+
+          showSelectSpecImageDialog: false,
+          selectedingImageSpecIndex: null, // 获取上传图片的表格索引
+          // selectedingImageSpecValueIndex: null,
+          sp_id: -1, // 新增table_data的id
+          sc_id: -1, // 新增规格名的id
+          specCounts: 0,
+          batch_input: "",
+          sortDialogVisible: false,
+          sortGoodsSpecs: []
+        },
+        computed: {
+          // 已添加的属性(字符串数组)
+          selectedAttr() {
+            return this.tableColumnList.goodsSpecs.map(x => x.attr)
+          },
+        },
+        methods: {
+          editHandleData(data) {
+            // 处理回显的数据
+            this.has_option = Number(data.has_option) == 0 ? false : true;
+            for (let i = 0; i < data.specs.length; i++) {
+              this.tableColumnList.goodsSpecs.push({
+                id: data.specs[i].id,
+                attr: data.specs[i].title,
+                valueList: data.specs[i].spec_item
+              })
+              // 生成处理表头数据和表格数据
+              this.generateTableColumn()
+              this.traverseSku()
+              this.tableColumnList.table_data = data.option;
+            }
+          },
+          addSpec() {
+            if (!this.add_value) return
+            if (this.selectedAttr.includes(this.add_value)){
+              this.$message({
+                message: '不能添加相同规格名',
+                type: 'warning'
+              });
+              return
+            }
+            this.sc_id++;
+            this.tableColumnList.goodsSpecs.push({
+              id: 'SC'+this.sc_id,
+              attr: this.add_value,
+              valueList: [{
+                "id": 'SV0&' + 'SC'+this.sc_id,
+                "specid": 'SC'+this.sc_id,
+                "title": ""
+              }],
+            });
+
+            // 生成处理表头数据和表格数据
+            this.generateTableColumn()
+            this.traverseSku()
+
+            this.add_popover_bool = false
+            this.add_value = ''
+          },
+          // 属性获得焦点时 得到旧的值 存一下
+          attrFocus(oldVal) {
+            old_attr = oldVal
+          },
+          // 属性失去焦点时
+          attrBlur(newVal) {
+            console.log('attrBlur')
+            // 如果 '新值等于旧值' 或者 '空' 什么也不做
+            if (newVal === old_attr || newVal === '') return
+
+            // 生成处理表头数据和表格数据
+            this.generateTableColumn()
+            this.traverseSku()
+          },
+          // 删除属性
+          removeSpec(specItemIndex) {
+            this.tableColumnList.goodsSpecs.splice(specItemIndex, 1);
+
+            // 生成处理表头数据和表格数据
+            this.generateTableColumn()
+            this.traverseSku()
+          },
+
+          async addSpecValue(specItemIndex) {
+            this.tableColumnList.goodsSpecs[specItemIndex].valueList.push({
+              "id": 'SV'+ this.tableColumnList.goodsSpecs[specItemIndex].valueList.length + '&' + this.tableColumnList.goodsSpecs[specItemIndex].id,
+              "specid": this.tableColumnList.goodsSpecs[specItemIndex].id,
+              "title": ""
+            });
+            // 让新增的输入框获得焦点
+            await this.$nextTick()
+            this.$refs.attrValueInput[this.$refs.attrValueInput.length - 1].focus()
+          },
+          // 属性值获得焦点时 得到旧的值 在输入框失去焦点的时候, 如果值没有变化, 则什么也不做
+          attrValueFocus(oldVal) {
+            old_attr_value = oldVal
+          },
+          // 属性值失去焦点时, 操作表格数据 (新版本 可以实现无限个规格)
+          newAttrValueBlur(curr_attr, newVal, specItemIndex, valueItemIndex) {
+            if (curr_attr === '') return
+            if (newVal === old_attr_value) return
+            let value_num = this.tableColumnList.goodsSpecs[specItemIndex].valueList.filter(item => item.title == newVal)
+            if ( value_num.length > 1 ) {
+              this.$message({
+                message: `规格值不能重复`,
+                type: 'warning'
+              });
+              this.tableColumnList.goodsSpecs[specItemIndex].valueList[valueItemIndex].title = "";
+              return
+            }
+
+            //  这里根据规格生成的笛卡尔积计算出table中需要改变的行索引 ( 包含新增和修改 )
+            let cartesian_arr = this.generateBaseData(this.tableColumnList.goodsSpecs)
+            // console.log(cartesian_arr)
+            let change_idx_arr = [] // 需要被改变的行的索引
+            for (let i in cartesian_arr) {
+              if (cartesian_arr[i][curr_attr] === newVal) change_idx_arr.push(Number(i))
+            }
+            console.log('change_idx_arr', change_idx_arr)
+
+            // 新的表格应该有的长度与现有的表格长度比较, 区分新增还是修改
+            let length_arr = this.tableColumnList.goodsSpecs.map(x => x.valueList.length)
+            let new_table_length = length_arr.reduce((acc, curr_item) => acc * curr_item) // 新的表格数据长度 求乘积
+            let old_table_length = this.tableColumnList.table_data.length // 旧的表格数据长度
+
+            this.specCounts = new_table_length;
+            // 如果是修改
+            if (new_table_length === old_table_length) {
+              this.tableColumnList.table_data.forEach((item, index) => {
+                if (change_idx_arr.includes(index)) this.tableColumnList.table_data[index][curr_attr] = newVal
+              })
+              return
+            }
+            // 如果是新增
+            if (new_table_length > old_table_length) {
+              // 得到当前属性的当前值和其他规格的 goodsSpecs, 构造新的表格数据
+              let other_sku_arr = this.tableColumnList.goodsSpecs.map(item => {
+                if (item.attr !== curr_attr) return item
+                else {
+                  return { id: this.tableColumnList.goodsSpecs[specItemIndex].id, attr: item.attr, valueList: [{
+                    "id": 'SV'+ this.tableColumnList.goodsSpecs[specItemIndex].valueList.length + '&' + this.tableColumnList.goodsSpecs[specItemIndex].id,
+                    "specid": this.tableColumnList.goodsSpecs[specItemIndex].id,
+                    "title": newVal
+                  }] }
+                }
+              })
+              // 得到新增的表格数据
+              let ready_map = this.generateBaseData(other_sku_arr)
+              let new_table_data = this.mergeTableData(ready_map)
+
+              change_idx_arr.forEach((item_idx, index) => {
+                this.tableColumnList.table_data.splice(item_idx, 0, new_table_data[index])
+              })
+              
+              this.tableColumnList.table_data.reverse().reverse()
+            }
+          },
+          removeSpecValue(specItemIndex, valueItemIndex, attr_name, attr_val) {
+            this.tableColumnList.goodsSpecs[specItemIndex]["valueList"].splice(valueItemIndex, 1);
+
+            // 删除table行
+            let data_length = this.tableColumnList.table_data.length
+            for (let i = 0; i < data_length; i++) {
+              if (this.tableColumnList.table_data[i][attr_name] == attr_val) {
+                this.tableColumnList.table_data.splice(i, 1)
+                i = i - 1
+                data_length = data_length - 1
+              }
+            }
+
+            this.specCounts = this.tableColumnList.table_data.length;
+          },
+          // 根据 `this.tableColumnList.goodsSpecs` 生成表格列, `tableHeaderList` 用于 el-table-column 的 v-for
+          generateTableColumn() {
+            this.tableHeaderList = this.tableColumnList.goodsSpecs.map(x => x.attr).concat(['stock', 'withhold_stock', 'market_price', 'product_price', 'cost_price', 'goods_sn', 'product_sn', 'weight', 'volume', 'thumb', ])
+          },
+          // 合并 goodsSpecs 与 '现价', '库存', '市场价格' , 返回整个表格数据数组
+          mergeTableData(arr) {
+            return arr.map((item) => {
+              this.sp_id++;
+              return { ...item, id: 'SP'+ this.sp_id, 'stock': '', 'withhold_stock': '', 'market_price': '0.00', 'product_price': '', 'cost_price': '0.00', 'goods_sn': '', 'product_sn': '', 'weight': '0.00', 'volume': '0.000', 'thumb': '', }
+            })
+          },
+          // 遍历 `goodsSpecs` 生成表格数据
+          traverseSku() {
+            let ready_map = this.generateBaseData(this.tableColumnList.goodsSpecs)
+            this.tableColumnList.table_data = this.mergeTableData(ready_map)
+            this.specCounts = this.tableColumnList.table_data.length;
+          },
+          // 重新实现笛卡尔积  入参是: this.tableColumnList.goodsSpecs 传入的数组 '为空', '长度为1', '长度大于1' 三种情况 分别处理
+          generateBaseData(arr) {
+            if (arr.length === 0) return []
+            if (arr.length === 1) {
+              let [item_spec] = arr
+              return item_spec.valueList.map(x => {
+                return {
+                  [item_spec.attr]: x.title
+                }
+              })
+            }
+            if (arr.length >= 1) {
+              return arr.reduce((accumulator, spec_item) => {
+                // accumulator判断是之前整合的规格数组还是单个规格项
+                let acc_value_list = Array.isArray(accumulator.valueList) ? accumulator.valueList : accumulator
+                let item_value_list = spec_item.valueList
+                let result = []
+                for (let i in acc_value_list) {
+                  for (let j in item_value_list) {
+                    let temp_data = {}
+                    if (!acc_value_list[i].title) {
+                      // accumulator不是Array的情况
+                      temp_data = {
+                        ...acc_value_list[i],
+                        [spec_item.attr]: item_value_list[j].title
+                      }
+
+                      // 否则如果是单个规格项
+                    } else {
+                      temp_data[accumulator.attr] = acc_value_list[i].title
+                      temp_data[spec_item.attr] = item_value_list[j].title
+                    }
+                    result.push(temp_data)
+                  }
+                }
+                return result
+              })
+            }
+          },
+
+          // 合并单元格
+          mergeRowComputed({ row, column, rowIndex, columnIndex }) {
+            if (columnIndex == 0) {
+              let key_0 = column.label
+              let first_idx = this.tableColumnList.table_data.findIndex(x => x[key_0] == row[key_0])
+              const calcSameLength = () => this.tableColumnList.table_data.filter(x => x[key_0] == row[key_0]).length
+              first_column_rule = rowIndex == first_idx ? [calcSameLength(), 1] : [0, 0]
+              return first_column_rule
+
+            }else {
+              // 表格数据的每一项, 
+              const callBacks = (table_item, start_idx = 0) => {
+                if (columnIndex < start_idx) return true
+                let curr_key = this.tableHeaderList[start_idx]
+                return table_item[curr_key] === row[curr_key] && callBacks(table_item, ++start_idx)
+              }
+              let first_idx = this.tableColumnList.table_data.findIndex(x => callBacks(x))
+              const calcSameLength = () => this.tableColumnList.table_data.filter(x => callBacks(x)).length
+              return rowIndex == first_idx ? [calcSameLength(), 1] : [0, 0]
+            }
+          },
+
+          // 拖拽排序
+          openSortDialog() {
+            this.sortDialogVisible = true;
+            this.sortGoodsSpecs = JSON.parse(JSON.stringify(this.tableColumnList.goodsSpecs));
+          },
+          sureSortDialog() {
+            this.tableColumnList.goodsSpecs = this.sortGoodsSpecs;
+
+            //循环旧数据  规格项都对应的数据应该赋给新数据
+            this.changeOption();
+            this.sortDialogVisible = false;
+          },
+          changeOption() {
+            let oldData = [];
+            // 先保存旧的表格数据
+            let old_table_data = JSON.parse(JSON.stringify(this.tableColumnList.table_data));
+            let old_data_length = old_table_data.length
+            for (let i = 0; i < old_data_length; i++) {
+              let title = "";
+              this.tableColumnList.goodsSpecs.forEach((item)=> {
+                title = title + old_table_data[i][item.attr] + '+'
+              })
+              oldData.push({
+                title: title.slice(0,title.length-1),
+                index: i
+              })
+            }
+            // 重新生成处理表头数据和表格数据
+            this.generateTableColumn();
+            this.traverseSku();
+
+            let data_length = this.tableColumnList.table_data.length
+            for (let i = 0; i < data_length; i++) {
+              // 循环新的表格数据进行替换
+              let title = "";
+              this.tableColumnList.goodsSpecs.forEach((item)=> {
+                title = title + this.tableColumnList.table_data[i][item.attr] + '+'
+              })
+              oldData.forEach((item)=> {
+                if(item.title == title.slice(0,title.length-1)) {
+                  // this.tableColumnList.table_data[i] = old_table_data[item.index]  这样赋值会导致输入框有问题  只能像下面这样
+                  this.tableColumnList.table_data[i].stock = old_table_data[item.index].stock;
+                  this.tableColumnList.table_data[i].withhold_stock = old_table_data[item.index].withhold_stock;
+                  this.tableColumnList.table_data[i].market_price = old_table_data[item.index].market_price;
+                  this.tableColumnList.table_data[i].product_price = old_table_data[item.index].product_price;
+                  this.tableColumnList.table_data[i].cost_price = old_table_data[item.index].cost_price;
+                  this.tableColumnList.table_data[i].goods_sn = old_table_data[item.index].goods_sn;
+                  this.tableColumnList.table_data[i].product_sn = old_table_data[item.index].product_sn;
+                  this.tableColumnList.table_data[i].weight = old_table_data[item.index].weight;
+                  this.tableColumnList.table_data[i].volume = old_table_data[item.index].volume;
+                  this.tableColumnList.table_data[i].thumb = old_table_data[item.index].thumb;
+                  this.tableColumnList.table_data[i].id = old_table_data[item.index].id;
+                }
+              })
+            }
+          },
+          clearALL() {
+            this.tableColumnList.goodsSpecs = [];
+            // 生成处理表头数据和表格数据
+            this.generateTableColumn()
+            this.traverseSku()
+          },
+          batchSet(value) {
+            // 批量设置
+            let data_length = this.tableColumnList.table_data.length
+            for (let i = 0; i < data_length; i++) {
+              this.tableColumnList.table_data[i][value] = this.batch_input;
+            }
+
+            this.batch_input = "";
+          },
+          selectSpecImage(attr, show, images) {
+            this.tableColumnList.table_data[this.selectedingImageSpecIndex].thumb = images[0]["url"];
+            this.$forceUpdate()
+          },
+          handleSpecs() {
+            let specsList = [];
+            let specs_length = this.tableColumnList.goodsSpecs.length;
+            if(this.has_option) {
+              // 启用商品规格再校验
+              for (let i = 0; i < specs_length; i++) {
+                // 第一步校验是否有空的规格名
+                if(!this.tableColumnList.goodsSpecs[i].attr) {
+                  this.$message({
+                    message: '规格名不能为空',
+                    type: 'warning'
+                  });
+                  this.$refs.specValueInput[i].focus()
+                  return [];
+                }
+              }
+            }
+            
+            for (let i = 0; i < specs_length; i++) {
+              if(this.has_option) {
+                // 启用商品规格再校验
+                let valueList = this.tableColumnList.goodsSpecs[i].valueList.map(value => value.title);
+                if(valueList.includes('')) {
+                  // 第二步校验是否有空的规格值
+                  this.$message({
+                    message: `${this.tableColumnList.goodsSpecs[i].attr}规格值不能为空`,
+                    type: 'warning'
+                  });
+                  this.$refs.specValueInput[i].focus();
+                  return [];
+                }
+              }
+              
+              specsList.push({
+                id: this.tableColumnList.goodsSpecs[i].id,
+                title: this.tableColumnList.goodsSpecs[i].attr,
+                spec_item: this.tableColumnList.goodsSpecs[i].valueList
+              })
+            }
+            return specsList;
+          },
+          handleOption(specs) {
+            let option = [];
+            let data_length = this.tableColumnList.table_data.length
+            for (let i = 0; i < data_length; i++) {
+              let title = "";
+              let specs_id = "";
+
+              if(this.has_option) {
+                // 启用商品规格再校验
+                if(this.tableColumnList.table_data[i].stock === '') {
+                  this.$message({
+                    message: `库存不能为空`,
+                    type: 'warning'
+                  });
+                  this.$refs[`stockValueInput${i}`].focus()
+                  return [];
+                }
+                if(this.tableColumnList.table_data[i].product_price === '') {
+                  this.$message({
+                    message: `现价不能为空`,
+                    type: 'warning'
+                  });
+                  this.$refs[`priceValueInput${i}`].focus()
+                  return [];
+                }
+              }
+              
+              specs.forEach((item)=> {
+                title = title + this.tableColumnList.table_data[i][item.title] + '+'
+                item.spec_item.forEach((spec)=> {
+                  if(spec.title === this.tableColumnList.table_data[i][item.title]) {
+                    specs_id = specs_id + spec.id + '_'
+                  }
+                })
+                
+              })
+              option.push({
+                ...this.tableColumnList.table_data[i],
+                title: title.slice(0,title.length-1),
+                specs: specs_id.slice(0,specs_id.length-1),
+              })
+            }
+            return option;
+          },
+          validate() {
+            console.log(this.tableColumnList.goodsSpecs);
+            console.log(this.tableColumnList.table_data)
+            let data = {};
+            // 注意：option是SP   规格名SC  和规格值SV新增 前缀分开来 保证id唯一
+            if(this.has_option) {
+              let specs = this.handleSpecs();
+              if(specs.length == 0) {
+                // 校验规格是否有空值
+                return false;
+              }
+
+              let option = this.handleOption(specs);
+              if(option.length == 0) {
+                // 校验库存和价格是否有空值
+                return false;
+              }
+
+              data = {
+                has_option: 1,
+                specs: specs,
+                option: option
+              };
+            }else {
+              // 不启用商品规格
+              let specs = this.handleSpecs();
+              let option = this.handleOption(specs);
+              data = {
+                has_option: 0,
+                specs: specs,
+                option: option
+              };
+            }
+            console.log(data)
+            return data;
+            
+          },
+        },
+      })
+    </script>
+  </body>
+</html>
