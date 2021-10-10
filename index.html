@@ -444,7 +444,14 @@
             }
 
             //  这里根据规格生成的笛卡尔积计算出table中需要改变的行索引 ( 包含新增和修改 )
-            let cartesian_arr = this.generateBaseData(this.tableColumnList.goodsSpecs)
+            let cartesian_arr = this.
+            
+            
+            
+            
+            
+            
+            (this.tableColumnList.goodsSpecs)
             // console.log(cartesian_arr)
             let change_idx_arr = [] // 需要被改变的行的索引
             for (let i in cartesian_arr) {
@@ -534,12 +541,14 @@
             }
             if (arr.length >= 1) {
               return arr.reduce((accumulator, spec_item) => {
-                // accumulator判断是之前整合的规格数组还是单个规格项
+                // accumulator判断之前的数据是  整合的规格数组还是单个规格项
                 let acc_value_list = Array.isArray(accumulator.valueList) ? accumulator.valueList : accumulator
+                // 获取当前项的valueList
                 let item_value_list = spec_item.valueList
                 let result = []
                 for (let i in acc_value_list) {
                   for (let j in item_value_list) {
+                    // 计算每种组合
                     let temp_data = {}
                     if (!acc_value_list[i].title) {
                       // accumulator不是Array的情况
