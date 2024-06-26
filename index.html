@@ -315,7 +315,7 @@
     </div>
 
     <!-- 先引入 Vue -->
-    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/vue@2.7.15/dist/vue.min.js"></script>
     <!-- 引入组件库 -->
     <script src="https://unpkg.com/element-ui/lib/index.js"></script>
     <script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
@@ -444,14 +444,7 @@
             }
 
             //  这里根据规格生成的笛卡尔积计算出table中需要改变的行索引 ( 包含新增和修改 )
-            let cartesian_arr = this.
-            
-            
-            
-            
-            
-            
-            (this.tableColumnList.goodsSpecs)
+             let cartesian_arr = this.generateBaseData(this.tableColumnList.goodsSpecs)
             // console.log(cartesian_arr)
             let change_idx_arr = [] // 需要被改变的行的索引
             for (let i in cartesian_arr) {
